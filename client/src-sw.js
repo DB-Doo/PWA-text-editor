@@ -40,11 +40,12 @@ const paths = ['style', 'script', 'worker'];
 // Asset caching
 // This registers a route for caching assets like styles, scripts, and worker scripts using a StaleWhileRevalidate strategy.
 // It serves from cache first (if available) and updates the cache in the background if there's an update.
+paths.includes(request.destination)
 registerRoute( ({ request }) => paths.includes(request.destination),
-  new StaleWhileRevalidate({
+  new workbox.strategies.StaleWhileRevalidate({
     cacheName: 'asset-cache', // Name of the cache storage for assets.
     plugins: [
-      new CacheableResponsePlugin({
+      new workbox.CacheableResponsePlugin({
         statuses: [0, 200],
       }),
     ],
