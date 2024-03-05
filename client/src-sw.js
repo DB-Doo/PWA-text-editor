@@ -8,6 +8,9 @@ const { precacheAndRoute } = require('workbox-precaching/precacheAndRoute');
 precacheAndRoute(self.__WB_MANIFEST);
 
 // Set up page cache
+// This creates a caching strategy for pages using CacheFirst strategy, 
+// which means it will serve the response from cache first if available, 
+// falling back to the network if not.
 const pageCache = new CacheFirst({
   cacheName: 'page-cache',
   plugins: [
@@ -15,65 +18,31 @@ const pageCache = new CacheFirst({
       statuses: [0, 200],
     }),
     new ExpirationPlugin({
-      maxAgeSeconds: 30 * 24 * 60 * 60,
+      maxAgeSeconds: 30 * 24 * 60 * 60, // Set the max age of the cached responses to 30 days.
     }),
   ],
 });
-
+// Pre-cache pages
+// This function pre-caches the specified URLs using the defined pageCache strategy, ensuring they are available offline.
 warmStrategyCache({
   urls: ['/index.html', '/'],
   strategy: pageCache,
 });
 
+// Navigation route caching
+// This registers a route for navigation requests (i.e., page navigations) to use the pageCache strategy.
 registerRoute(({ request }) => request.mode === 'navigate', pageCache);
 
+// Define the array of paths
+// This array specifies the types of requests to cache using the StaleWhileRevalidate strategy below.
+const paths = ['style', 'script', 'worker'];
 
-/*
-  TODO:
-
-  In the package.json for this assignment you'll see a dependency named 
-  'workbox-webpack-plugin'. We use a subset of this component to intercept 
-  routes to our app and return a cached version if no Internet connection 
-  is available.
-
-  You can see the require statement in line 3 above.
-  
-  You can read more about workbox here if you like:
-  https://developer.chrome.com/docs/workbox
-
-  In the code below, you'll be configuring the routing using a method 
-  named registerRoute. For these routes, we need to supply a caching 
-  strategy. In other words we need to tell Webpack *how* to cache any 
-  assets in these routes.
-
-  Workbox gives us many strategies. For the code below we'll be using one 
-  called StaleWhileRevalidate. You read about it here:
-
-  https://developer.chrome.com/docs/workbox/caching-strategies-overview/#stale-while-revalidate
-
-  In the code below, we only want to register a route if the requested 
-  destination contains "style", "script", or "worker". So, first, create an 
-  array with these three strings.
-
-  Something like:
-     const paths = []   // complete the array
-
-  We also need to be able to reference whatever destination is being sought. This 
-  is part of the {request} object being injected below. So we would get that value 
-  from  request.destination
-
-  We then want to verify that the requested destination contains one item in that 
-  array. There is an array method called includes() which does this.
-
-  Once we have identified a viable route, we will instantiate the strategy we wish 
-  to use. Remember that it's called StaleWhileRevalidate.
-
-  If you supply the correct values below, this file is complete.
-*/
-
-registerRoute( ({ request }) => variableForArrayHere.ARRAY_METHOD_HERE(variableForDestinationHere),
-  new CLASSNAME_TO_INSTANTIATE_HERE({
-    cacheName: 'asset-cache',
+// Asset caching
+// This registers a route for caching assets like styles, scripts, and worker scripts using a StaleWhileRevalidate strategy.
+// It serves from cache first (if available) and updates the cache in the background if there's an update.
+registerRoute( ({ request }) => paths.includes(request.destination),
+  new StaleWhileRevalidate({
+    cacheName: 'asset-cache', // Name of the cache storage for assets.
     plugins: [
       new CacheableResponsePlugin({
         statuses: [0, 200],
